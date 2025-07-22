@@ -160,7 +160,7 @@ class UserSubscription(BaseModel):
         """
         String representation of the UserSubscription instance.
         """
-        return f"{self.user.username} - {self.subscription_plan} ({self.buy_time})"
+        return f"{self.user.username} - {self.subscription_plan} ({self.created_at})"
 
     def clean(self) -> None:
         """

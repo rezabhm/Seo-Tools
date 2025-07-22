@@ -6,7 +6,7 @@ from django.utils import timezone
 import logging
 from datetime import timedelta
 from apps.core.models import CustomUser, BaseModel
-from apps.payment.models import SubscriptionPlan, Subscription
+from apps.payment.models.subscription import SubscriptionPlan, UserSubscription
 
 # Configure logging for better debugging and monitoring
 logger = logging.getLogger(__name__)
@@ -144,10 +144,10 @@ class PaymentTransaction(BaseModel):
             logger.error(f"Error initiating payment for transaction {self.paypal_transaction_id}: {str(e)}")
             return False
 
-    def complete_payment(self, paypal_response: Dict[str, Any]) -> Optional[Subscription]:
+    def complete_payment(self, paypal_response: Dict[str, Any]) -> Optional[UserSubscription]:
         """
         Complete the payment, update status, and create a corresponding subscription.
-        Returns the created Subscription instance or None if failed.
+        Returns the created UserSubscription instance or None if failed.
         """
         from django.db import transaction
 
@@ -163,7 +163,7 @@ class PaymentTransaction(BaseModel):
 
                 # Calculate subscription duration based on plan (default 30 days)
                 duration_days = getattr(self.subscription_plan, 'duration_days', 30)
-                subscription = Subscription.objects.create(
+                subscription = UserSubscription.objects.create(
                     user=self.user,
                     subscription_plan=self.subscription_plan,
                     expire_time=timezone.now() + timedelta(days=duration_days),

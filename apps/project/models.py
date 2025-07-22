@@ -1,8 +1,3 @@
-# Optimized Django models for project and process management
-# Author: [Your Name]
-# Date: July 22, 2025
-# Description: Enhanced models for managing projects and their associated processes with robust validation and tracking
-
 from typing import List, Optional
 from django.db import models
 from django.utils.translation import gettext_lazy as _
