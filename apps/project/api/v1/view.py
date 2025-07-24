@@ -209,7 +209,7 @@ class ProcessAPIView(
             raise PermissionDenied(_('You cannot access finished processes.'))
         return super().retrieve(request, *args, **kwargs)
 
-    @action(detail=False, methods=['get'], url_path='project/(?P<project_id>\d+)')
+    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_id>\d+)')
     def list_project_processes(self, request, project_id=None):
         """
         List all active processes for a specific project where the user is the owner or collaborator.

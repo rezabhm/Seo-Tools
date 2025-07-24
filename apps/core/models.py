@@ -13,7 +13,7 @@ class BaseModel(models.Model):
     """
     Abstract base model providing common timestamp fields.
     """
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    created_at = models.DateTimeField(verbose_name=_("Created At"), default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
 
     class Meta:

@@ -1,7 +1,9 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.core.serializers import CustomUserSerializer
 from apps.payment.serializers.payment import PaymentTransactionSerializer
-from apps.payment.serializers.subscription import UserSubscriptionSerializer
+from apps.payment.serializers.subscription import UserSubscriptionSerializer, SubscriptionPlanSerializer
 
 # PaymentTransactionAdminAPIView Decorators
 admin_create_payment_transaction_swagger = swagger_auto_schema(
@@ -140,13 +142,7 @@ user_initiate_payment_swagger = swagger_auto_schema(
     tags=['payment.transaction'],
     request_body=PaymentTransactionSerializer,
     responses={
-        201: openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'transaction': PaymentTransactionSerializer().to_schema(),
-                'redirect_url': openapi.Schema(type=openapi.TYPE_STRING, description='PayPal redirect URL for payment')
-            }
-        ),
+        201: PaymentTransactionSerializer,
         400: 'Invalid input data (e.g., mismatched amount or non-unique PayPal transaction ID).',
         401: 'Unauthorized: Valid JWT token required.'
     }
@@ -169,8 +165,8 @@ user_complete_payment_swagger = swagger_auto_schema(
             type=openapi.TYPE_OBJECT,
             properties={
                 'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Transaction ID'),
-                'user': CustomUserSerializer().to_schema(),
-                'subscription_plan': SubscriptionPlanSerializer().to_schema(),
+                'user': CustomUserSerializer(),
+                'subscription_plan': SubscriptionPlanSerializer(),
                 'paypal_transaction_id': openapi.Schema(type=openapi.TYPE_STRING, description='PayPal transaction ID'),
                 'amount': openapi.Schema(type=openapi.TYPE_NUMBER, format='decimal', description='Transaction amount'),
                 'status': openapi.Schema(type=openapi.TYPE_STRING, description='Transaction status'),
@@ -179,7 +175,7 @@ user_complete_payment_swagger = swagger_auto_schema(
                 'subscription_remaining_days': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True, description='Remaining days for subscription'),
                 'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time', description='Transaction creation time'),
                 'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time', description='Transaction update time'),
-                'subscription': UserSubscriptionSerializer().to_schema()
+                'subscription': UserSubscriptionSerializer()
             }
         ),
         400: 'Invalid input: Transaction is not pending or failed to complete.',

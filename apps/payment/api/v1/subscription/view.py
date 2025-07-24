@@ -1,8 +1,10 @@
+from django.db.models import ProtectedError
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework import mixins, filters
+from rest_framework import mixins, filters, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
 from apps.payment.models.subscription import SubscriptionPlan, PlanFeature, UserSubscription
@@ -59,6 +61,17 @@ class SubscriptionPlanAdminAPIView(
     queryset = SubscriptionPlan.objects.all()
     filter_backends = [filters.SearchFilter]
     search_fields = ['price', 'keyword_limit']
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+        except ProtectedError:
+            return Response(
+                {"detail": "This subscription plan is in use and cannot be deleted."},
+                status=status.HTTP_400_BAD_REQUEST  # or 409 Conflict
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @method_decorator(name='create', decorator=admin_create_plan_feature_swagger)
 @method_decorator(name='retrieve', decorator=admin_retrieve_plan_feature_swagger)

@@ -12,6 +12,10 @@ from apps.payment.config import expire_time
 logger = logging.getLogger(__name__)
 
 
+def get_expire_time():
+    return timezone.now() + timedelta(days=expire_time)
+
+
 class SubscriptionPlan(BaseModel):
     """
     SubscriptionPlan model representing different subscription tiers with associated features and limits.
@@ -62,9 +66,9 @@ class SubscriptionPlan(BaseModel):
         """
         Custom validation for SubscriptionPlan fields.
         """
-        if self.price < 0:
+        if self.price and self.price < 0:
             raise ValidationError(_("Price cannot be negative"))
-        if self.keyword_limit < 0:
+        if self.keyword_limit and self.keyword_limit < 0:
             raise ValidationError(_("Keyword limit cannot be negative"))
 
 
@@ -112,7 +116,7 @@ class UserSubscription(BaseModel):
     """
 
     expire_time = models.DateTimeField(
-        default=lambda: timezone.now() + timedelta(days=expire_time),
+        default=get_expire_time,
         verbose_name=_("Expiration Time"),
         help_text=_("Timestamp when the subscription expires"),
     )

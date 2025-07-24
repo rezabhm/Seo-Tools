@@ -1,8 +1,8 @@
 from rest_framework.routers import DefaultRouter
 from apps.payment.api.v1.payment.view import (
     PaymentTransactionAdminAPIView,
-    PaymentTransactionAPIView,
-    PaymentTransactionReadOnlyAPIView,
+    PaymentTransactionAPIView, PaymentTransactionReadOnlyAPIView,
+
 )
 from apps.payment.api.v1.subscription.view import (
     SubscriptionPlanAdminAPIView,
@@ -22,6 +22,6 @@ router.register(r'user-subscriptions', UserSubscriptionReadOnlyAPIView, basename
 
 router.register(r'admin/transactions', PaymentTransactionAdminAPIView, basename='admin-payment-transaction')
 router.register(r'transactions', PaymentTransactionAPIView, basename='payment-transaction')
-router.register(r'transactions/read-only', PaymentTransactionReadOnlyAPIView, basename='payment-transaction-read-only')
+router.register(r'transactions-ro/', PaymentTransactionReadOnlyAPIView, basename='payment-transaction-read-only')
 
 urlpatterns = router.urls

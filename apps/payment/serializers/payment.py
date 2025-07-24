@@ -121,6 +121,7 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
                 if data['amount'] != data['subscription_plan'].price:
                     logger.error(f"Transaction amount {data['amount']} does not match subscription plan price {data['subscription_plan'].price}")
                     raise serializers.ValidationError(_("Transaction amount must match the subscription plan price"))
+
             instance = PaymentTransaction(**data)
             instance.clean()
             return data

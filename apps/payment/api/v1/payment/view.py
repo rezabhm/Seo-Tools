@@ -2,12 +2,11 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
-from rest_framework import mixins, filters
+from rest_framework import mixins, filters, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from apps.payment.api.v1.payment.utils import create_paypal_payment, capture_paypal_payment
 from apps.payment.models.payment import PaymentTransaction
 from apps.payment.serializers.payment import PaymentTransactionSerializer
@@ -26,9 +25,10 @@ from apps.payment.api.v1.payment.swagger_decorator import (
 )
 import logging
 
+from apps.payment.serializers.subscription import UserSubscriptionSerializer
+
 # Configure logging
 logger = logging.getLogger(__name__)
-
 
 @method_decorator(name='create', decorator=admin_create_payment_transaction_swagger)
 @method_decorator(name='retrieve', decorator=admin_retrieve_payment_transaction_swagger)
@@ -55,6 +55,36 @@ class PaymentTransactionAdminAPIView(
     filter_backends = [filters.SearchFilter]
     search_fields = ['paypal_transaction_id', 'user__username', 'status']
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get('status') == 'completed':
+            subscription = instance.complete_payment_fun(serializer.validated_data.get('paypal_response', {}))
+            if not subscription:
+                raise ValidationError(_('Failed to create subscription.'))
+        else:
+            self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get('status') in ['completed', 'canceled', 'failed', 'refunded']:
+            if serializer.validated_data.get('status') == 'completed':
+                subscription = instance.complete_payment_fun(serializer.validated_data.get('paypal_response', {}))
+                if not subscription:
+                    raise ValidationError(_('Failed to create subscription.'))
+            elif serializer.validated_data.get('status') == 'canceled':
+                instance.cancel_payment()
+            elif serializer.validated_data.get('status') == 'failed':
+                instance.fail_payment(serializer.validated_data.get('paypal_response', {}))
+            elif serializer.validated_data.get('status') == 'refunded':
+                instance.refund_payment(serializer.validated_data.get('paypal_response', {}))
+        else:
+            self.perform_update(serializer)
+        return Response(serializer.data)
 
 @method_decorator(name='initiate_payment', decorator=user_initiate_payment_swagger)
 @method_decorator(name='complete_payment', decorator=user_complete_payment_swagger)
@@ -88,7 +118,8 @@ class PaymentTransactionAPIView(
         instance = self.get_object()
         if instance.user != self.request.user:
             raise PermissionDenied(_('You can only access your own transactions.'))
-        return super().retrieve(request, *args, **kwargs)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
     def initiate_payment(self, request):
@@ -101,21 +132,26 @@ class PaymentTransactionAPIView(
         # Set user to authenticated user
         serializer.validated_data['user'] = self.request.user
 
-        # Generate PayPal transaction ID and redirect URL (replace with actual PayPal API call)
+        # Generate PayPal transaction ID and redirect URL
         try:
+
             paypal_transaction_id, redirect_url = create_paypal_payment(
                 amount=serializer.validated_data['amount'],
                 subscription_plan_id=serializer.validated_data['subscription_plan'].id,
                 return_url=request.build_absolute_uri('/api/payment/v1/complete/'),
                 cancel_url=request.build_absolute_uri('/api/payment/v1/cancel/')
             )
+
             serializer.validated_data['paypal_transaction_id'] = paypal_transaction_id
             serializer.validated_data['redirect_url'] = redirect_url
+
         except Exception as e:
+
             logger.error(f"Error initiating PayPal payment: {str(e)}")
             raise ValidationError(_("Failed to initiate PayPal payment"))
 
         # Create the transaction
+
         transaction = serializer.save()
         return Response({
             'transaction': serializer.data,
@@ -133,7 +169,7 @@ class PaymentTransactionAPIView(
         if instance.status != 'pending':
             raise ValidationError(_('Only pending transactions can be completed.'))
 
-        # Capture PayPal payment (replace with actual PayPal API call)
+        # Capture PayPal payment
         try:
             paypal_response = capture_paypal_payment(instance.paypal_transaction_id)
         except Exception as e:
@@ -141,9 +177,15 @@ class PaymentTransactionAPIView(
             raise ValidationError(_("Failed to complete PayPal payment"))
 
         # Complete the transaction and create subscription
+        subscription = instance.complete_payment_fun(paypal_response)
+        if not subscription:
+            raise ValidationError(_('Failed to create subscription.'))
+
         serializer = self.get_serializer(instance)
-        response_data = serializer.complete_payment_action(instance, paypal_response)
-        return Response(response_data)
+        return Response({
+            'transaction': serializer.data,
+            'subscription': UserSubscriptionSerializer(subscription).data
+        })
 
     @action(detail=True, methods=['post'])
     def cancel_payment(self, request, id=None):
@@ -182,6 +224,7 @@ class PaymentTransactionReadOnlyAPIView(
         """
         Restrict queryset to transactions belonging to the authenticated user.
         """
+
         return PaymentTransaction.objects.filter(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
@@ -191,4 +234,5 @@ class PaymentTransactionReadOnlyAPIView(
         instance = self.get_object()
         if instance.user != self.request.user:
             raise PermissionDenied(_('You can only access your own transactions.'))
-        return super().retrieve(request, *args, **kwargs)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

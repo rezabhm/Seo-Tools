@@ -107,8 +107,12 @@ class PaymentTransaction(BaseModel):
             raise ValidationError(_("Redirect URL cannot exceed 500 characters"))
         if not self.paypal_transaction_id.strip():
             raise ValidationError(_("PayPal transaction ID cannot be empty"))
-        if self.subscription_plan and self.amount != self.subscription_plan.price:
-            raise ValidationError(_("Transaction amount must match the subscription plan price"))
+
+        try:
+            if self.subscription_plan and self.amount != self.subscription_plan.price:
+                raise ValidationError(_("Transaction amount must match the subscription plan price"))
+        except Exception as e:
+            pass
 
     def save(self, *args, **kwargs) -> None:
         """
@@ -144,13 +148,12 @@ class PaymentTransaction(BaseModel):
             logger.error(f"Error initiating payment for transaction {self.paypal_transaction_id}: {str(e)}")
             return False
 
-    def complete_payment(self, paypal_response: Dict[str, Any]) -> Optional[UserSubscription]:
+    def complete_payment_fun(self, paypal_response: Dict[str, Any]) -> Optional[UserSubscription]:
         """
         Complete the payment, update status, and create a corresponding subscription.
         Returns the created UserSubscription instance or None if failed.
         """
         from django.db import transaction
-
         try:
             with transaction.atomic():
                 if self.status != 'pending':
@@ -166,14 +169,14 @@ class PaymentTransaction(BaseModel):
                 subscription = UserSubscription.objects.create(
                     user=self.user,
                     subscription_plan=self.subscription_plan,
-                    expire_time=timezone.now() + timedelta(days=duration_days),
+                    # expire_time=timezone.now() + timedelta(days=duration_days),
                     keywords_extracted=0,
                     keywords_extracted_percent=0.0
                 )
                 logger.info(f"Created subscription {subscription.id} for transaction {self.paypal_transaction_id}")
                 return subscription
         except Exception as e:
-            logger.error(f"Error completing payment for transaction {self.paypal_transaction_id}: {str(e)}")
+            logger.error(f"123 Error completing payment for transaction {self.paypal_transaction_id}: {str(e)}")
             return None
 
     def fail_payment(self, paypal_response: Dict[str, Any]) -> bool:
