@@ -1,29 +1,29 @@
+import os
 from datetime import timedelta
-
 from configs.settings.base import *
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# Debug mode enabled for development
 DEBUG = True
 
+# Allow all hosts during development
 ALLOWED_HOSTS = ['*']
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
+# Database configuration using environment variables
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # استفاده از PostgreSQL
-        'NAME': 'SeoTools',  # نام دیتابیس PostgreSQL
-        'USER': 'postgres',  # نام کاربری دیتابیس
-        'PASSWORD': 'rezabhm:1290',  # رمز عبور دیتابیس
-        'HOST': 'localhost',  # آدرس سرور دیتابیس (localhost برای دیتابیس محلی)
-        'PORT': '5432',  # پورت دیتابیس (پورت پیش‌فرض PostgreSQL)
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DEV_DB_NAME', 'SeoTools'),
+        'USER': os.environ.get('DEV_DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DEV_DB_PASSWORD', 'rezabhm:1290'),
+        'HOST': os.environ.get('DEV_DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DEV_DB_PORT', '5432'),
     }
 }
 
-
-# Cors headers Config
+# CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = os.environ.get('DEV_CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -43,26 +43,8 @@ CORS_ALLOW_METHODS = [
     "OPTIONS",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Example: React frontend
-    # "https://your-production-domain.com",
-]
-
-# JWT Authentication Configs
+# JWT token settings
 SIMPLE_JWT = {
-
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # Set token expiration time
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=5),     # Refresh token expiration time
-
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=5),
 }
-
-# # Redis Configs
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
