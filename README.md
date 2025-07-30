@@ -1,7 +1,7 @@
 <!-- Project Banner Image -->
 
 <p align="center">
-  <img src="./seo_tools_banner.webp" alt="SEO Tools Banner" width="800" />
+  <img src="./seo_tools_banner.jpg" alt="SEO Tools Banner" width="800" />
 </p>
 
 # SEO Tools 🔍📈
@@ -89,7 +89,7 @@ Run the project in one of two ways:
 3. Pull and run the image:
 
 ```bash
-docker pull yourdockerhubusername/seo_tools:latest
+docker pull rezabm50/seo_tools:latest
 docker run -p 8000:8000 --rm -it seo_tools
 ```
 
