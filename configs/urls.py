@@ -44,11 +44,11 @@ urlpatterns = [
     path('swagger.yaml', schema_view.without_ui(cache_timeout=0), name='schema-yaml'),
 
     # api version 1
+    path('api/v1/accounts/', include('api.v1.routers')),
     path('api/v1/core/', include('apps.core.api.v1.routers')),
     path('api/v1/keyword-service/', include('apps.keyword_service.api.v1.routers')),
     path('api/v1/payment/', include('apps.payment.api.v1.routers')),
-    path('api/v1/core/', include('apps.project.api.v1.routers')),
-    path('api/v1/core/', include('apps.core.api.v1.routers')),
+    path('api/v1/project/', include('apps.project.api.v1.routers')),
 
 ]
 
