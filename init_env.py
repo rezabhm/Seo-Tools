@@ -15,7 +15,7 @@ print(f"Selected environment: {ENVIRONMENT}")
 DJANGO_PORT = input_with_default("Django Port", "8000")
 
 # Development settings
-DEV_DB_NAME = input_with_default("DEV Database Name", "ClickReservationSystem")
+DEV_DB_NAME = input_with_default("DEV Database Name", "SeoTools")
 DEV_DB_USER = input_with_default("DEV Database User", "postgres")
 DEV_DB_PASSWORD = input_with_default("DEV Database Password", "user@1234")
 DEV_DB_HOST = input_with_default("DEV Database Host", "host.docker.internal")
@@ -23,7 +23,7 @@ DEV_DB_PORT = input_with_default("DEV Database Port", "5432")
 DEV_CORS_ALLOWED_ORIGINS = input_with_default("DEV CORS Allowed Origins (comma separated)", "http://localhost:3000")
 
 # Production settings
-PROD_DB_NAME = input_with_default("PRODUCTION Database Name", "ClickReservationSystem")
+PROD_DB_NAME = input_with_default("PRODUCTION Database Name", "SeoTools")
 PROD_DB_USER = input_with_default("PRODUCTION Database User", "postgres")
 PROD_DB_PASSWORD = input_with_default("PRODUCTION Database Password", "user@1234")
 PROD_DB_HOST = input_with_default("PRODUCTION Database Host", "host.docker.internal")
